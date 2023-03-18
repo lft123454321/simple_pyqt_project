@@ -1,0 +1,1 @@
+pyuic5 -o material_ui.py material_ui.ui
