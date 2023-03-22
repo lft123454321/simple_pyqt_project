@@ -1,19 +1,23 @@
 # 使用例子
 import sys
 import os
+from qt_material import apply_stylesheet
 # from PySide6 import QtWidgets
 # from PySide2 import QtWidgets
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QTableWidgetItem, QDesktopWidget, QStatusBar
-from qt_material import apply_stylesheet
 from material_ui import Ui_MainWindow
 
 from tqdm import trange
 import pandas as pd
 
 import estimate
-import dp_code
 
+USING_DP = False
+if USING_DP:
+    import dp_code
+else:
+    import deposition_replenishment_algorithm
 
 class MyMainForm(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
@@ -170,8 +174,16 @@ class MyMainForm(QtWidgets.QMainWindow, Ui_MainWindow):
             print('d:', d)
             d = d.astype(int)
             print('d:', d)
-            planner = dp_code.DpPlanner(T, b, h, beta, lamda, c, L)
-            p = planner.dp(d)
+            if USING_DP:
+                planner = dp_code.DpPlanner(T, b, h, beta, lamda, c, L)
+                p = planner.dp(d)
+            else:
+                m = 0
+                n = 0
+                np = 0
+                planner = deposition_replenishment_algorithm.DepositionReplenishmentAlgorithm(T, c, b, h, beta, L, m, n, np, lamda)
+                q_list, min_v = planner.run(d)
+                p = list(q_list.values())
             self.df_plan = pd.DataFrame(p, columns=['采购量'], index=[
                                         i for i in range(1, len(p)+1)])
             self.df_plan.index.name = '周期'
