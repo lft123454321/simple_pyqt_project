@@ -10,6 +10,7 @@ from material_ui import Ui_MainWindow
 
 from tqdm import trange
 import pandas as pd
+from scipy.stats import poisson
 
 import estimate
 
@@ -164,13 +165,16 @@ class MyMainForm(QtWidgets.QMainWindow, Ui_MainWindow):
             lamda = int(self.lamda / float(self.lineEdit_lambda_base.text()))
             c = self.c
             L = int(self.L / float(self.lineEdit_L_base.text()))
-            df = self.df_sales
-            df['date'] = pd.to_datetime(df['下单时间'])
-            df = df.set_index('date')
-            daily_sales_sum = df[df['ProductName'] == '中长款无毛领羽绒服'].resample(
-                self.lineEdit_L_base.text()+'d').sum(numeric_only=True)
-            d = daily_sales_sum['销量'].values / \
-                float(self.lineEdit_lambda_base.text())
+            if False: # using imported data
+                df = self.df_sales
+                df['date'] = pd.to_datetime(df['下单时间'])
+                df = df.set_index('date')
+                daily_sales_sum = df[df['ProductName'] == '中长款无毛领羽绒服'].resample(
+                    self.lineEdit_L_base.text()+'d').sum(numeric_only=True)
+                d = daily_sales_sum['销量'].values / \
+                    float(self.lineEdit_lambda_base.text())
+            else:
+                d = poisson.rvs(lamda, size = T+1)
             print('d:', d)
             d = d.astype(int)
             print('d:', d)
@@ -184,6 +188,7 @@ class MyMainForm(QtWidgets.QMainWindow, Ui_MainWindow):
                 planner = deposition_replenishment_algorithm.DepositionReplenishmentAlgorithm(T, c, b, h, beta, L, m, n, np, lamda)
                 q_list, min_v = planner.run(d)
                 p = list(q_list.values())
+            print('p:', p)
             self.df_plan = pd.DataFrame(p, columns=['采购量'], index=[
                                         i for i in range(1, len(p)+1)])
             self.df_plan.index.name = '周期'
